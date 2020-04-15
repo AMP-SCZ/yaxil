@@ -230,7 +230,10 @@ def rename_fmapp(bids_base, basename):
 
 def convert(input, output):
     '''
-    Run dcm2niix on input file
+    input: dcm dir
+    output: outfile full path
+    Run dcm2niix on input file to get BIDS sidecar, 
+    then delete nifti and rerun with dcm2nii (for iproc reverse compatibility)
     '''
     dirname = os.path.dirname(output)
     if not os.path.exists(dirname):
@@ -240,11 +243,20 @@ def convert(input, output):
     dcm2niix = commons.which('dcm2niix')
     cmd = [
         'dcm2niix',
-        '-s', 'y',
-        '-b', 'y',
-        '-z', 'y',
+        '-b', 'o', # just the json
+        '-ba', #anonymize bids
+        '-s', 'y', # single file mode
         '-f', basename,
         '-o', dirname,
+        input
+    ]
+    logger.debug(cmd)
+    sp.check_output(cmd)
+    cmd = [
+        'dcm2nii',
+        '-f', basename,
+        '-o', dirname,
+        '-g', 'y', #default is to zip but just in case
         input
     ]
     logger.debug(cmd)
